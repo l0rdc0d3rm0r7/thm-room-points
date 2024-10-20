@@ -19,6 +19,11 @@ As of todays date: 20/10/2024 - You need:
 - Doing the top 50 point rooms listed will give you 36,506 points or around rank 3,000
 - Doing the top 100 point rooms listed will give you 53,592 points or around rank 1,234
 
+>> Also introduced is the ability to grab your completed rooms already and nicely output what needs to be done. Get your USER hash by visiting your profile and monitoring your network tab. You should see a request like this
+```https://tryhackme.com/api/v2/public-profile/completed-rooms?user=659d12cf86b9ed139d4d1753&limit=16&page=1```
+
+Take that hash and put it into the script check_your_stats.py
+
 
 | Room Name | Room URL | Points | Difficulty |
 |-----------|----------|--------|------------|
