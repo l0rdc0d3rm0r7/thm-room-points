@@ -11,7 +11,7 @@ As of todays date: 20/10/2024 - You need:
 - 73,875 points to be top 500 world
 - 65,896 points to be top 700 world
 - 58,172 points to be top 1,000 world
-
+---
 - Completing all the rooms listed below would make you rank 6 overall. 
 - Doing the top 10 point rooms listed will give you 11,906 points or around rank 50,000
 - Doing the top 20 point rooms listed will give you 20,020 points or around rank 13,815
@@ -22,8 +22,15 @@ As of todays date: 20/10/2024 - You need:
 >> Also introduced is the ability to grab your completed rooms already and nicely output what needs to be done. Get your USER hash by visiting your profile and monitoring your network tab. You should see a request like this
 ```https://tryhackme.com/api/v2/public-profile/completed-rooms?user=659d12cf86b9ed139d4d1753&limit=16&page=1```
 
-Take that hash and put it into the script check_your_stats.py
+Take that hash and put it into the script check_your_stats.py like so:
+1. ```git clone https://github.com/pentestfunctions/thm-room-points.git```
 
+2. ```cd thm-room-points```
+
+3. ```python check_your_stats.py HASH```
+
+> Replace HASH with your profile HASH.
+ This will give you 2 files. completed_rooms.txt and rooms_to_complete.txt with the order of highest points at the top.
 
 | Room Name | Room URL | Points | Difficulty |
 |-----------|----------|--------|------------|
