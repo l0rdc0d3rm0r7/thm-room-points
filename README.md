@@ -1,6 +1,3 @@
-A lot of points say 0 points so will figure out how to fix that later but the main ones that give points are listed. Idk was a dumb way of scraping points data, looked at scoreboard URL for each room and took second persons results as more points for first blood. 
-```https://tryhackme.com/api/v2/rooms/scoreboard?roomCode={room_code}&limit=10```
-
 1. It takes Ryans (0days completed room) to get a list of room codes. (He hasn't done all the rooms, so I could run it against someone else or pull them another way)
 2. It requests each rooms leaderboard API to find the points for each. 
 
