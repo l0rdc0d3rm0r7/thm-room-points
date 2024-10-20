@@ -13,7 +13,10 @@ As of todays date: 20/10/2024 - You need:
 - 58,172 points to be top 1,000 world
 
 - Completing all the rooms listed below would make you rank 6 overall. 
-- Doing the top 50 point rooms listed will give you 
+- Doing the top 10 point rooms listed will give you 11,906 points or around rank 50,000
+- Doing the top 20 point rooms listed will give you 20,020 points or around rank 13,815
+- Doing the top 30 point rooms listed will give you 26,640 points or around rank 7,000
+- Doing the top 50 point rooms listed will give you 36,506 points or around rank 3,000
 - Doing the top 100 point rooms listed will give you 53,592 points or around rank 1,234
 
 
