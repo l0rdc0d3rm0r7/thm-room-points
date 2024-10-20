@@ -36,21 +36,55 @@ Take that hash and put it into the script check_your_stats.py like so:
 
 # TryHackMe Room Difficulty Summary
 
-| Difficulty | Total Points | Number of Rooms |
-|------------|------------:|----------------:|
-| 🟢 Easy    | 60,752      | 387             |
-| 🟠 Medium  | 55,038      | 353             |
-| 🔴 Hard    | 10,610      | 73              |
-| ⚫ Insane  | 930         | 8               |
-| ℹ️ Info    | 2,956       | 32              |
+| Difficulty | Total Points | Number of Rooms | Average Points per Room |
+|------------|------------:|----------------:|------------------------:|
+| 🟢 Easy    | 60,752      | 387             | 157.0 |
+| 🟠 Medium  | 55,038      | 353             | 155.9 |
+| 🔴 Hard    | 10,610      | 73              | 145.3 |
+| ⚫ Insane  | 930         | 8               | 116.3 |
+| ℹ️ Info    | 2,956       | 32              | 92.4  |
 
 ## Statistics
 
 - **Total Rooms**: 853
 - **Total Points**: 130,286
-- **Average Points per Room**: 152.74
+- **Overall Average Points per Room**: 152.7
 
-> This summary provides an overview of the TryHackMe rooms categorized by difficulty, showing the total points and number of rooms for each category.
+## Average Points per Room by Difficulty
+
+```mermaid
+graph LR
+    title[Average Points per Room by Difficulty]
+    style title fill:#fff,stroke:#fff
+
+    subgraph chart[" "]
+    Easy[Easy - 157.0]
+    Medium[Medium - 155.9]
+    Hard[Hard - 145.3]
+    Insane[Insane - 116.3]
+    Info[Info - 92.4]
+    end
+
+    Easy --> |157.0| point1((•))
+    Medium --> |155.9| point2((•))
+    Hard --> |145.3| point3((•))
+    Insane --> |116.3| point4((•))
+    Info --> |92.4| point5((•))
+
+    style Easy fill:#90EE90,stroke:#333,stroke-width:2px
+    style Medium fill:#FFA500,stroke:#333,stroke-width:2px
+    style Hard fill:#FF6347,stroke:#333,stroke-width:2px
+    style Insane fill:#000000,stroke:#333,stroke-width:2px,color:#fff
+    style Info fill:#1E90FF,stroke:#333,stroke-width:2px
+
+    classDef point fill:#fff,stroke:#333,stroke-width:2px;
+    class point1,point2,point3,point4,point5 point;
+
+    classDef graphStyle fill:#f5f5f5,stroke:#333,stroke-width:2px;
+    class chart graphStyle;
+```
+
+> This summary provides an overview of the TryHackMe rooms categorized by difficulty, showing the total points, number of rooms, and average points per room for each category. The graph visualizes the average points per room across difficulty levels.
 
 
 
