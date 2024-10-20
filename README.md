@@ -31,6 +31,29 @@ Take that hash and put it into the script check_your_stats.py like so:
 
 > Replace HASH with your profile HASH.
  This will give you 2 files. completed_rooms.txt and rooms_to_complete.txt with the order of highest points at the top.
+---
+
+
+# TryHackMe Room Difficulty Summary
+
+| Difficulty | Total Points | Number of Rooms |
+|------------|------------:|----------------:|
+| 🟢 Easy    | 60,752      | 387             |
+| 🟠 Medium  | 55,038      | 353             |
+| 🔴 Hard    | 10,610      | 73              |
+| ⚫ Insane  | 930         | 8               |
+| ℹ️ Info    | 2,956       | 32              |
+
+## Statistics
+
+- **Total Rooms**: 853
+- **Total Points**: 130,286
+- **Average Points per Room**: 152.74
+
+> This summary provides an overview of the TryHackMe rooms categorized by difficulty, showing the total points and number of rooms for each category.
+
+
+
 
 | Room Name | Room URL | Points | Difficulty |
 |-----------|----------|--------|------------|
