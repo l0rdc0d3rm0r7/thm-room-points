@@ -4,18 +4,69 @@ from collections import namedtuple
 import time
 import json
 import argparse
+import sys
+from colorama import init, Fore, Back, Style
+import os
+from tabulate import tabulate
+
+# Initialize colorama
+init()
 
 # Define a named tuple to store room information
 Room = namedtuple('Room', ['name', 'url', 'points', 'difficulty'])
 
+def clear_screen():
+    """Clear the terminal screen."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def print_banner():
+    """Print an animated ASCII art banner."""
+    banner = f"""
+{Fore.RED}████████╗██╗  ██╗███╗   ███╗{Fore.WHITE} ███████╗ ██████╗██████╗  █████╗ ██████╗ ███████╗██████╗ 
+{Fore.RED}╚══██╔══╝██║  ██║████╗ ████║{Fore.WHITE} ██╔════╝██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗
+{Fore.RED}   ██║   ███████║██╔████╔██║{Fore.WHITE} ███████╗██║     ██████╔╝███████║██████╔╝█████╗  ██████╔╝
+{Fore.RED}   ██║   ██╔══██║██║╚██╔╝██║{Fore.WHITE} ╚════██║██║     ██╔══██╗██╔══██║██╔═══╝ ██╔══╝  ██╔══██╗
+{Fore.RED}   ██║   ██║  ██║██║ ╚═╝ ██║{Fore.WHITE} ███████║╚██████╗██║  ██║██║  ██║██║     ███████╗██║  ██║
+{Fore.RED}   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝{Fore.WHITE} ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝
+    """
+    
+    loading_messages = [
+        f"{Fore.CYAN}Initializing TryHackMe scraper...",
+        f"{Fore.YELLOW}Preparing for room analysis...",
+        f"{Fore.GREEN}Loading room database...",
+        f"{Fore.MAGENTA}Starting up..."
+    ]
+    
+    # Animated banner display
+    clear_screen()
+    for line in banner.split('\n'):
+        print(line)
+        time.sleep(0.1)
+    
+    # Loading animation
+    for msg in loading_messages:
+        print(f"\r{msg}", end='')
+        time.sleep(0.5)
+        sys.stdout.flush()
+    
+    print(f"\n\n{Fore.CYAN}Ready to analyze TryHackMe rooms!{Style.RESET_ALL}\n")
+    time.sleep(0.5)
+
 def fetch_raw_data(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.text
-    else:
-        raise Exception(f"Failed to fetch data: HTTP {response.status_code}")
+    """Fetch raw data from a URL with error handling and retries."""
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            return response.text
+        except requests.exceptions.RequestException as e:
+            if attempt == max_retries - 1:
+                raise Exception(f"Failed to fetch data after {max_retries} attempts: {str(e)}")
+            time.sleep(2 ** attempt)  # Exponential backoff
 
 def parse_rooms(raw_data):
+    """Parse room information from markdown table format."""
     rooms = []
     # Find the start of the room table
     table_start = raw_data.find("| Room Name | Room URL | Points | Difficulty |")
@@ -25,46 +76,143 @@ def parse_rooms(raw_data):
     # Extract the table content
     table_content = raw_data[table_start:]
     
-    # Parse the table
-    pattern = r'\| (.*?) \| (https://tryhackme\.com/room/.*?) \| (\d+) \| (.*?) \|'
+    # Parse the table with improved regex pattern
+    pattern = r'\|\s*([^|]+?)\s*\|\s*(https://tryhackme\.com/room/[^|\s]+)\s*\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|'
     matches = re.findall(pattern, table_content)
     
     for match in matches:
         name, url, points, difficulty = match
-        rooms.append(Room(name, url, int(points), difficulty.strip()))
+        rooms.append(Room(
+            name=name.strip(),
+            url=url.strip(),
+            points=int(points),
+            difficulty=difficulty.strip()
+        ))
     
     return rooms
 
 def get_completed_rooms(user_id, limit=20):
+    """Fetch completed rooms for a user with rate limiting and progress tracking."""
     rooms = []
     page = 1
+    total_rooms = 0
+    
     while True:
         url = f"https://tryhackme.com/api/v2/public-profile/completed-rooms?user={user_id}&limit={limit}&page={page}"
-        response = requests.get(url)
-        data = response.json()
-        
-        if not data['data']['docs']:
-            break
-        
-        rooms.extend(data['data']['docs'])
-        page += 1
-        
-        print(f"Fetched page {page-1}, total rooms so far: {len(rooms)}")
-        time.sleep(2)
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            
+            current_rooms = data['data']['docs']
+            if not current_rooms:
+                break
+            
+            rooms.extend(current_rooms)
+            total_rooms = len(rooms)
+            print(f"{Fore.GREEN}Fetched page {page}, total rooms: {total_rooms}{Style.RESET_ALL}")
+            
+            page += 1
+            time.sleep(2)  # Rate limiting
+            
+        except (requests.exceptions.RequestException, json.JSONDecodeError) as e:
+            print(f"{Fore.RED}Error fetching page {page}: {str(e)}{Style.RESET_ALL}")
+            time.sleep(5)  # Wait longer on error
+            continue
     
     return rooms
 
+def generate_table_data(rooms):
+    """Convert room data to table format."""
+    headers = ["Room Name", "URL", "Points", "Difficulty"]
+    table_data = [[room.name, room.url, room.points, room.difficulty] for room in rooms]
+    return headers, table_data
+
+def save_results(completed_rooms, uncompleted_rooms, total_points_gained):
+    """Save results to files in tabulated format."""
+    # Prepare tables
+    completed_headers, completed_data = generate_table_data(completed_rooms)
+    uncompleted_headers, uncompleted_data = generate_table_data(uncompleted_rooms)
+    
+    # Calculate statistics
+    potential_points = sum(room.points for room in uncompleted_rooms)
+    stats_data = [
+        ["Total Completed Rooms", len(completed_rooms)],
+        ["Total Points Gained", total_points_gained],
+        ["Remaining Rooms", len(uncompleted_rooms)],
+        ["Potential Points Available", potential_points]
+    ]
+    
+    # Top 5 rooms table
+    top_5_rooms = sorted(uncompleted_rooms, key=lambda x: x.points, reverse=True)[:5]
+    top_5_headers, top_5_data = generate_table_data(top_5_rooms)
+    
+    # Save completed rooms
+    with open('completed_rooms.txt', 'w', encoding='utf-8') as f:
+        f.write("Completed Rooms Summary\n")
+        f.write("=" * 100 + "\n\n")
+        
+        # Write statistics
+        f.write("Statistics\n")
+        f.write("-" * 50 + "\n")
+        f.write(tabulate(
+            [["Total Rooms", len(completed_rooms)],
+             ["Total Points", total_points_gained]],
+            tablefmt="grid"
+        ))
+        f.write("\n\n")
+        
+        # Write completed rooms table
+        f.write("Completed Rooms Detail\n")
+        f.write("-" * 50 + "\n")
+        f.write(tabulate(completed_data, 
+                        headers=completed_headers,
+                        tablefmt="grid"))
+    
+    # Save rooms to complete
+    with open('rooms_to_complete.txt', 'w', encoding='utf-8') as f:
+        f.write("Rooms To Complete Summary\n")
+        f.write("=" * 100 + "\n\n")
+        
+        # Write statistics
+        f.write("Current Progress\n")
+        f.write("-" * 50 + "\n")
+        f.write(tabulate(stats_data,
+                        headers=["Metric", "Value"],
+                        tablefmt="grid"))
+        f.write("\n\n")
+        
+        # Write top 5 rooms table
+        f.write("Top 5 High-Point Rooms to Complete\n")
+        f.write("-" * 50 + "\n")
+        f.write(tabulate(top_5_data,
+                        headers=top_5_headers,
+                        tablefmt="grid"))
+        f.write("\n\n")
+        
+        # Write all uncompleted rooms table
+        f.write("All Remaining Rooms\n")
+        f.write("-" * 50 + "\n")
+        f.write(tabulate(uncompleted_data,
+                        headers=uncompleted_headers,
+                        tablefmt="grid"))
+
 def main(user_id):
+    """Main function to process TryHackMe room data."""
     try:
+        print_banner()
+        
         # Fetch and parse room data from GitHub
         github_url = "https://raw.githubusercontent.com/pentestfunctions/thm-room-points/refs/heads/main/README.md"
+        print(f"{Fore.CYAN}Fetching room data from GitHub...{Style.RESET_ALL}")
         raw_data = fetch_raw_data(github_url)
         all_rooms = parse_rooms(raw_data)
+        print(f"{Fore.GREEN}Found {len(all_rooms)} total rooms{Style.RESET_ALL}")
         
         # Get user's completed rooms
-        print("Fetching completed rooms...")
+        print(f"\n{Fore.CYAN}Fetching completed rooms for user {user_id}...{Style.RESET_ALL}")
         completed_rooms_data = get_completed_rooms(user_id)
-        print(f"Total completed rooms: {len(completed_rooms_data)}")
+        print(f"{Fore.GREEN}Total completed rooms: {len(completed_rooms_data)}{Style.RESET_ALL}")
         
         # Create a set of completed room codes
         completed_room_codes = set(room['code'] for room in completed_rooms_data)
@@ -82,26 +230,33 @@ def main(user_id):
             else:
                 uncompleted.append(room)
         
-        # Sort uncompleted rooms by points (descending)
+        # Sort rooms by points
         uncompleted.sort(key=lambda x: x.points, reverse=True)
+        completed.sort(key=lambda x: x.points, reverse=True)
         
-        # Write results to files
-        with open('completed_rooms.txt', 'w') as f:
-            for room in completed:
-                f.write(f"{room.name} | {room.url} | {room.points} | {room.difficulty}\n")
-            f.write(f"\nTotal points gained: {total_points_gained}\n")
+        # Save results in tabulated format
+        save_results(completed, uncompleted, total_points_gained)
         
-        with open('rooms_to_complete.txt', 'w') as f:
-            for room in uncompleted:
-                f.write(f"{room.name} | {room.url} | {room.points} | {room.difficulty}\n")
+        # Display summary in console
+        print(f"\n{Fore.GREEN}Analysis complete!{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}Results written to 'completed_rooms.txt' and 'rooms_to_complete.txt'{Style.RESET_ALL}")
         
-        print(f"Results written to 'completed_rooms.txt' and 'rooms_to_complete.txt'")
-    
+        # Display quick summary
+        print(f"\n{Fore.YELLOW}Quick Summary:{Style.RESET_ALL}")
+        stats = [
+            ["Total Completed Rooms", len(completed)],
+            ["Total Points Gained", total_points_gained],
+            ["Remaining Rooms", len(uncompleted)],
+            ["Potential Points Available", sum(room.points for room in uncompleted)]
+        ]
+        print(tabulate(stats, headers=["Metric", "Value"], tablefmt="grid"))
+        
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
+        print(f"{Fore.RED}An error occurred: {str(e)}{Style.RESET_ALL}")
+        raise
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="THM Room Data Scraper and Analyzer")
+    parser = argparse.ArgumentParser(description="TryHackMe Room Data Scraper and Analyzer")
     parser.add_argument("user_id", help="TryHackMe user ID hash")
     args = parser.parse_args()
     
